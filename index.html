@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-route.js"></script>
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<body ng-app="myApp">
+
+<div ng-view></div>
+
+<script>
+    var app = angular.module("myApp", ["ngRoute"]);
+    app.config(function($routeProvider) {
+        $routeProvider
+            .when("/", {
+                templateUrl : "dpartmentList.html",
+                controller: 'departController'
+            })
+            .when('/listOfEmploeesOfDep/:pageName', {
+                templateUrl: 'employeesList.html',
+                controller: 'departController'
+            })
+            .otherwise({
+                templateUrl : "dpartmentList.html",
+                controller: 'departController'
+            });
+
+    });
+
+    app.controller('departController', function($scope, $http) {
+
+        $scope.loadDepartmenList=function () {
+            $http({
+                method: 'GET',
+                url: 'http://ebsexpress-env.us-west-2.elasticbeanstalk.com/users/departments/'
+            }).then(function successCallback(response) {
+                $scope.departments = response.data;
+            }, function errorCallback(response) {
+                alert("Some problems with connection to the server " + response.data)
+            });
+        };
+
+        $http({
+            method: 'GET',
+            url: 'http://ebsexpress-env.us-west-2.elasticbeanstalk.com/users/employees/'
+        }).then(function successCallback(response) {
+            $scope.employees = response.data;
+        }, function errorCallback(response) {
+            alert("Some problems with connection to the server " + response.data)
+        });
+
+        $scope.loadDepartmenList();
+
+        $scope.chooseDepart = function (obj) {
+            var listOfEmploees = [];
+            for(var i =0; i<$scope.employees.length; i++){
+                if($scope.employees[i].departmentId==obj.id){
+                    listOfEmploees.push( $scope.employees[i]);
+                }
+            }
+            $scope.$parent.selectedListOfEmploees = listOfEmploees;
+            $scope.$parent.selectedDepartmen = obj;
+        };
+
+        $scope.deleteDepart = function (obj) {
+            $http({
+                method: 'DELETE',
+                url: "http://ebsexpress-env.us-west-2.elasticbeanstalk.com/users/departments/" + obj.id
+            }).then(function successCallback(response) {
+                if(response.data){
+                    $scope.loadDepartmenList();
+                }
+            }, function errorCallback(response) {
+                alert("Some problems with connection to the server " + response.data)
+            });
+
+        };
+
+        $scope.addNewDepart = function (obj) {
+            console.log(Number($scope.newDepId));
+            if($scope.newDepId=='' ||  $scope.newDepName=='' || $scope.newDepDescription==''){
+                alert("You did't enter full information about departmen, please try again!" );
+            }
+            if(Number.isInteger(Number($scope.newDepId))){
+                $scope.newDepId="";
+                $scope.newDepName ="";
+                $scope.newDepDescription ="";
+                $http({
+                    method: 'POST',
+                    url: 'http://ebsexpress-env.us-west-2.elasticbeanstalk.com/users/departments/',
+                    data: obj
+                }).then(function successCallback(response) {
+                    if(response.data){
+                        $scope.loadDepartmenList();
+                    }
+                }, function errorCallback(response) {
+                    alert("Some problems with connection to the server " + response.data)
+                });
+            }
+            else {
+                alert("ID of new departmen is NOT a number, please try again!");
+            }
+        };
+    });
+
+</script>
+
+</body>
+</html>
+</html>
